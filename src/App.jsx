@@ -384,6 +384,8 @@ function App() {
           {isLoginMode ? (
             <form onSubmit={handleLogin}>
               <h2>Welcome Back</h2>
+              <p className="login-subtitle">Sign in to your account</p>
+              
               <div className="input-group">
                 <label>Email</label>
                 <input
@@ -429,9 +431,9 @@ function App() {
                 Sign in with Google
               </button>
               
-              <div className="info-text">
-                <p>Demo: admin@finance.com / Admin@123</p>
-              </div>
+              <p className="register-link">
+                Don't have an account? <a href="#" onClick={(e) => { e.preventDefault(); setIsLoginMode(false); }}>Sign up</a>
+              </p>
             </form>
           ) : (
             <form onSubmit={handleRegister}>
@@ -482,9 +484,9 @@ function App() {
               <button type="submit" className="btn" disabled={loading}>
                 {loading ? 'Creating account...' : 'Register'}
               </button>
-              <div className="info-text">
-                <p>Default role is Viewer. Admin approval may be required.</p>
-              </div>
+              <p className="register-link">
+                Already have an account? <a href="#" onClick={(e) => { e.preventDefault(); setIsLoginMode(true); }}>Login</a>
+              </p>
             </form>
           )}
         </div>
