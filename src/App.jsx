@@ -490,11 +490,20 @@ function App() {
       <div className="transactions-section">
         <div className="transactions-header">
           <h3>Transactions</h3>
-          {(user?.role_name === 'admin' || user?.role_name === 'analyst') && (
-            <button onClick={() => setShowModal(true)} className="btn add-transaction-btn">
-              + Add Transaction
-            </button>
-          )}
+          <button 
+            onClick={() => setShowModal(true)} 
+            style={{
+              background: '#28a745',
+              color: 'white',
+              padding: '10px 20px',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }}
+          >
+            + Add Transaction
+          </button>
         </div>
 
         <div className="filters">
@@ -558,16 +567,12 @@ function App() {
                   ${parseFloat(transaction.amount).toLocaleString()}
                 </td>
                 <td>
-                  {(user?.role_name === 'admin' || user?.role_name === 'analyst') && (
-                    <button onClick={() => openEditModal(transaction)} className="btn edit-btn">
-                      Edit
-                    </button>
-                  )}
-                  {user?.role_name === 'admin' && (
-                    <button onClick={() => handleDeleteTransaction(transaction.id)} className="btn delete-btn">
-                      Delete
-                    </button>
-                  )}
+                  <button onClick={() => openEditModal(transaction)} className="btn edit-btn">
+                    Edit
+                  </button>
+                  <button onClick={() => handleDeleteTransaction(transaction.id)} className="btn delete-btn">
+                    Delete
+                  </button>
                 </td>
               </tr>
             ))}
