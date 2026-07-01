@@ -42,7 +42,13 @@ const api = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify(transaction)
+      body: JSON.stringify({
+        amount: parseFloat(transaction.amount),
+        type: transaction.type,
+        category: transaction.category,
+        date: transaction.date,
+        description: transaction.description || ''
+      })
     });
     return response.json();
   },
@@ -54,7 +60,13 @@ const api = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify(transaction)
+      body: JSON.stringify({
+        amount: parseFloat(transaction.amount),
+        type: transaction.type,
+        category: transaction.category,
+        date: transaction.date,
+        description: transaction.description || ''
+      })
     });
     return response.json();
   },
