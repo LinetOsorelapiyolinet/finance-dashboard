@@ -43,7 +43,38 @@ import {
   Globe,
   User,
   Camera,
-  Upload
+  Upload,
+  Moon,
+  Sun,
+  Monitor,
+  Shield,
+  Mail,
+  Bell as BellIcon,
+  Eye,
+  EyeOff,
+  Save,
+  RefreshCw,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  Activity,
+  Lock,
+  Unlock,
+  Users,
+  Share2,
+  FileText as FileTextIcon,
+  Printer,
+  ExternalLink,
+  HelpCircle as HelpIcon,
+  MessageCircle,
+  BookOpen,
+  Video,
+  Mail as MailIcon,
+  Phone,
+  Globe as GlobeIcon,
+  Award,
+  Zap,
+  Sparkles
 } from 'lucide-react';
 import api from './api/api';
 import './App.css';
@@ -71,6 +102,24 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [profileImage, setProfileImage] = useState(null);
   const fileInputRef = useRef(null);
+  
+  const [settings, setSettings] = useState({
+    emailNotifications: true,
+    pushNotifications: true,
+    weeklyReports: true,
+    monthlyReports: true,
+    theme: 'dark',
+    accentColor: 'cyan',
+    fontSize: 'medium',
+    compactView: false,
+    twoFactorAuth: false,
+    sessionTimeout: 30,
+    shareAnalytics: false,
+    publicProfile: false
+  });
+  const [settingsSaved, setSettingsSaved] = useState(false);
+  const [settingsLoading, setSettingsLoading] = useState(false);
+  const [auditLogs, setAuditLogs] = useState([]);
   
   const [summary, setSummary] = useState(null);
   const [transactions, setTransactions] = useState([]);
@@ -103,11 +152,39 @@ function App() {
   const [registerError, setRegisterError] = useState('');
   const [registerSuccess, setRegisterSuccess] = useState('');
   const [notificationCount, setNotificationCount] = useState(3);
-  const [showNotifications, setShowNotifications] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredTransactions, setFilteredTransactions] = useState([]);
 
-  // Load profile image from localStorage
+  const loadSettings = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch((import.meta.env.VITE_API_URL || 'https://finance-backend-api-74z9.onrender.com') + '/api/settings', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const result = await response.json();
+      if (result.success) {
+        setSettings(result.data);
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    }
+  };
+
+  const loadAuditLogs = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch((import.meta.env.VITE_API_URL || 'https://finance-backend-api-74z9.onrender.com') + '/api/audit-logs', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const result = await response.json();
+      if (result.success) {
+        setAuditLogs(result.data);
+      }
+    } catch (error) {
+      console.error('Error loading audit logs:', error);
+    }
+  };
+
   useEffect(() => {
     const savedImage = localStorage.getItem('profileImage');
     if (savedImage) {
@@ -137,6 +214,8 @@ function App() {
   useEffect(() => {
     if (token) {
       validateToken();
+      loadSettings();
+      loadAuditLogs();
     } else {
       setLoading(false);
       setIsAuthenticated(false);
@@ -258,12 +337,11 @@ function App() {
     }
   };
 
-  // ===== PROFILE IMAGE HANDLERS =====
   const handleProfileImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onloadend = function() {
         const imageData = reader.result;
         setProfileImage(imageData);
         localStorage.setItem('profileImage', imageData);
@@ -272,67 +350,56 @@ function App() {
     }
   };
 
-  const triggerFileInput = () => {
+  const triggerFileInput = function() {
     fileInputRef.current.click();
   };
 
-  // ===== NAVIGATION HANDLERS =====
-  const handleTabChange = (tab) => {
+  const handleSettingChange = function(key, value) {
+    setSettings({ ...settings, [key]: value });
+    setSettingsSaved(false);
+  };
+
+  const saveSettings = async function() {
+    setSettingsLoading(true);
+    try {
+      const response = await fetch((import.meta.env.VITE_API_URL || 'https://finance-backend-api-74z9.onrender.com') + '/api/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify(settings)
+      });
+      const result = await response.json();
+      if (result.success) {
+        setSettingsSaved(true);
+        setTimeout(function() { setSettingsSaved(false); }, 3000);
+        alert('Settings saved successfully!');
+      } else {
+        alert('Failed to save settings: ' + result.message);
+      }
+    } catch (error) {
+      alert('Error saving settings: ' + error.message);
+    }
+    setSettingsLoading(false);
+  };
+
+  const handleTabChange = function(tab) {
     setActiveTab(tab);
     if (window.innerWidth <= 1024) {
       setSidebarOpen(false);
     }
-    // Show different content based on tab
-    switch(tab) {
-      case 'dashboard':
-        break;
-      case 'accounts':
-        alert('Accounts page - Manage your bank accounts and credit cards');
-        break;
-      case 'transactions':
-        alert('Transactions page - View all your transactions');
-        break;
-      case 'investments':
-        alert('Investments page - Track your investment portfolio');
-        break;
-      case 'budgets':
-        alert('Budgets page - Set and manage your budgets');
-        break;
-      case 'goals':
-        alert('Goals page - Set and track your financial goals');
-        break;
-      case 'reports':
-        alert('Reports page - Generate financial reports');
-        break;
-      case 'settings':
-        alert('Settings page - Manage your account settings');
-        break;
-      case 'help':
-        alert('Help & Support - Get help with your account');
-        break;
-      default:
-        break;
-    }
   };
 
-  const handleSidebarToggle = () => {
+  const handleSidebarToggle = function() {
     setSidebarOpen(!sidebarOpen);
   };
 
-  // ===== SEARCH HANDLER =====
-  const handleSearch = (e) => {
+  const handleSearch = function(e) {
     setSearchQuery(e.target.value);
   };
 
-  // ===== NOTIFICATION HANDLER =====
-  const toggleNotifications = () => {
-    setShowNotifications(!showNotifications);
-    if (!showNotifications) {
-      setNotificationCount(0);
-    }
-  };
-
-  const handleLogin = async (e) => {
+  const handleLogin = async function(e) {
     e.preventDefault();
     setLoginError('');
     setLoading(true);
@@ -357,7 +424,7 @@ function App() {
     window.location.href = (import.meta.env.VITE_API_URL || 'https://finance-backend-api-74z9.onrender.com') + '/auth/google';
   };
 
-  const handleRegister = async (e) => {
+  const handleRegister = async function(e) {
     e.preventDefault();
     setRegisterError('');
     setRegisterSuccess('');
@@ -401,7 +468,7 @@ function App() {
     localStorage.removeItem('profileImage');
   };
 
-  const handleSubmitTransaction = async (e) => {
+  const handleSubmitTransaction = async function(e) {
     e.preventDefault();
     if (!token) {
       alert('Please login first');
@@ -436,7 +503,7 @@ function App() {
     setLoading(false);
   };
 
-  const handleDeleteTransaction = async (id) => {
+  const handleDeleteTransaction = async function(id) {
     if (!token) return;
     if (window.confirm('Are you sure you want to delete this transaction?')) {
       try {
@@ -482,14 +549,12 @@ function App() {
     setEditingTransaction(null);
   };
 
-  // ===== EXPORT HANDLER =====
-  const handleExport = () => {
+  const handleExport = function() {
     if (transactions.length === 0) {
       alert('No transactions to export');
       return;
     }
-    // Create CSV content
-    let csvContent = 'Date,Description,Category,Type,Amount\n';
+    var csvContent = 'Date,Description,Category,Type,Amount\n';
     transactions.forEach(function(t) {
       csvContent += new Date(t.date).toLocaleDateString() + ',';
       csvContent += (t.description || '-') + ',';
@@ -498,10 +563,9 @@ function App() {
       csvContent += t.amount + '\n';
     });
     
-    // Download CSV
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    var blob = new Blob([csvContent], { type: 'text/csv' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
     a.href = url;
     a.download = 'transactions_export.csv';
     document.body.appendChild(a);
@@ -511,19 +575,12 @@ function App() {
     alert('Transactions exported successfully!');
   };
 
-  // ===== CHART DATA =====
-  var mockData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-    income: [5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000, 13000, 14000, 15000, 16000],
-    expenses: [3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500]
-  };
-
   var barChartData = {
-    labels: monthlyTrends.length > 0 ? monthlyTrends.map(function(m) { return m.month_name.substring(0, 3); }) : mockData.labels,
+    labels: monthlyTrends.length > 0 ? monthlyTrends.map(function(m) { return m.month_name.substring(0, 3); }) : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     datasets: [
       {
         label: 'Income',
-        data: monthlyTrends.length > 0 ? monthlyTrends.map(function(m) { return m.total_income; }) : mockData.income,
+        data: monthlyTrends.length > 0 ? monthlyTrends.map(function(m) { return m.total_income; }) : [5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000, 13000, 14000, 15000, 16000],
         backgroundColor: 'rgba(0, 255, 136, 0.6)',
         borderColor: '#00ff88',
         borderWidth: 2,
@@ -532,7 +589,7 @@ function App() {
       },
       {
         label: 'Expenses',
-        data: monthlyTrends.length > 0 ? monthlyTrends.map(function(m) { return m.total_expenses; }) : mockData.expenses,
+        data: monthlyTrends.length > 0 ? monthlyTrends.map(function(m) { return m.total_expenses; }) : [3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500],
         backgroundColor: 'rgba(255, 51, 102, 0.6)',
         borderColor: '#ff3366',
         borderWidth: 2,
@@ -596,11 +653,10 @@ function App() {
     cutout: '70%'
   };
 
-  // Mock transactions for display
   var mockTransactions = [
-    { id: 1, name: 'Apple Inc.', symbol: 'AAPL • Stock', date: 'May 28, 2024', amount: 250.00, type: 'income', category: 'Stocks', status: 'Completed' },
-    { id: 2, name: 'Starbucks', symbol: 'Dining • Expense', date: 'May 27, 2024', amount: 18.75, type: 'expense', category: 'Dining', status: 'Completed' },
-    { id: 3, name: 'Salary Deposit', symbol: 'Income', date: 'May 26, 2024', amount: 8765.42, type: 'income', category: 'Income', status: 'Completed' },
+    { id: 1, amount: 250.00, type: 'income', category: 'Stocks', date: '2024-05-28', description: 'Apple Inc. investment' },
+    { id: 2, amount: 18.75, type: 'expense', category: 'Dining', date: '2024-05-27', description: 'Starbucks coffee' },
+    { id: 3, amount: 8765.42, type: 'income', category: 'Salary', date: '2024-05-26', description: 'Monthly salary deposit' },
   ];
 
   var displayTransactions = filteredTransactions.length > 0 ? filteredTransactions : mockTransactions;
@@ -727,10 +783,8 @@ function App() {
 
   return (
     <div className="dashboard-container">
-      {/* Sidebar Overlay */}
       {sidebarOpen && <div className="sidebar-overlay" onClick={function() { setSidebarOpen(false); }}></div>}
 
-      {/* Sidebar */}
       <aside className={'sidebar ' + (sidebarOpen ? 'open' : '')}>
         <div className="sidebar-header">
           <div className="logo">
@@ -831,7 +885,6 @@ function App() {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="main-content">
         <header className="main-header">
           <button className="menu-toggle" onClick={handleSidebarToggle}>
@@ -847,11 +900,8 @@ function App() {
             />
           </div>
           <div className="header-actions">
-            <button className="icon-btn" onClick={toggleNotifications}>
+            <button className="icon-btn" onClick={function() { alert('Notifications'); }}>
               <Bell size={20} />
-              {notificationCount > 0 && (
-                <span className="notification-badge">{notificationCount}</span>
-              )}
             </button>
             <button className="icon-btn" onClick={handleExport}>
               <Download size={20} />
@@ -870,150 +920,341 @@ function App() {
         </header>
 
         <div className="dashboard-content">
-          <div className="page-header">
-            <h1>Overview</h1>
-            <div className="page-actions">
-              <button className="btn-outline" onClick={handleExport}>Export</button>
-              <button className="btn-primary" onClick={openAddModal}>
-                <Plus size={16} /> Add Transaction
-              </button>
-            </div>
-          </div>
-
-          {/* Stats Cards */}
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-header">
-                <span className="stat-label">Total Balance</span>
-                <span className="stat-badge success">+12.5%</span>
-              </div>
-              <div className="stat-value">${summary?.net_balance?.toLocaleString() || '124,567.89'}</div>
-              <div className="stat-change positive">
-                <ArrowUpRight size={16} /> 12.5% vs last month
-              </div>
-            </div>
-
-            <div className="stat-card">
-              <div className="stat-header">
-                <span className="stat-label">Monthly Income</span>
-                <span className="stat-badge success">+8.2%</span>
-              </div>
-              <div className="stat-value income">${summary?.total_income?.toLocaleString() || '8,765.42'}</div>
-              <div className="stat-change positive">
-                <ArrowUpRight size={16} /> 8.2% vs last month
-              </div>
-            </div>
-
-            <div className="stat-card">
-              <div className="stat-header">
-                <span className="stat-label">Expenses</span>
-                <span className="stat-badge danger">+3.4%</span>
-              </div>
-              <div className="stat-value expense">${summary?.total_expenses?.toLocaleString() || '3,456.78'}</div>
-              <div className="stat-change negative">
-                <ArrowDownRight size={16} /> 3.4% vs last month
-              </div>
-            </div>
-          </div>
-
-          {/* Charts */}
-          <div className="charts-section">
-            <div className="chart-card portfolio-chart">
-              <div className="chart-header">
-                <h3>Portfolio Growth</h3>
-                <div className="chart-controls">
-                  <button className="chart-btn active" onClick={function() { alert('1D view selected'); }}>1D</button>
-                  <button className="chart-btn" onClick={function() { alert('1W view selected'); }}>1W</button>
-                  <button className="chart-btn" onClick={function() { alert('1M view selected'); }}>1M</button>
-                  <button className="chart-btn" onClick={function() { alert('3M view selected'); }}>3M</button>
-                  <button className="chart-btn" onClick={function() { alert('ALL view selected'); }}>ALL</button>
+          {activeTab === 'dashboard' && (
+            <>
+              <div className="page-header">
+                <h1>Overview</h1>
+                <div className="page-actions">
+                  <button className="btn-outline" onClick={handleExport}>Export</button>
+                  <button className="btn-primary" onClick={openAddModal}>
+                    <Plus size={16} /> Add Transaction
+                  </button>
                 </div>
               </div>
-              <div className="chart-body">
-                <Bar data={barChartData} options={barOptions} />
-              </div>
-            </div>
 
-            <div className="chart-card">
-              <h3>Asset Allocation</h3>
-              <div className="chart-body pie-chart">
-                <Pie data={pieData} options={pieOptions} />
-                <div className="donut-center">
-                  <span className="donut-label">Total</span>
-                  <span className="donut-value">${summary?.net_balance?.toLocaleString() || '124,567'}</span>
+              <div className="stats-grid">
+                <div className="stat-card">
+                  <div className="stat-header">
+                    <span className="stat-label">Total Balance</span>
+                    <span className="stat-badge success">+12.5%</span>
+                  </div>
+                  <div className="stat-value">${summary?.net_balance?.toLocaleString() || '124,567.89'}</div>
+                  <div className="stat-change positive">
+                    <ArrowUpRight size={16} /> 12.5% vs last month
+                  </div>
+                </div>
+
+                <div className="stat-card">
+                  <div className="stat-header">
+                    <span className="stat-label">Monthly Income</span>
+                    <span className="stat-badge success">+8.2%</span>
+                  </div>
+                  <div className="stat-value income">${summary?.total_income?.toLocaleString() || '8,765.42'}</div>
+                  <div className="stat-change positive">
+                    <ArrowUpRight size={16} /> 8.2% vs last month
+                  </div>
+                </div>
+
+                <div className="stat-card">
+                  <div className="stat-header">
+                    <span className="stat-label">Expenses</span>
+                    <span className="stat-badge danger">+3.4%</span>
+                  </div>
+                  <div className="stat-value expense">${summary?.total_expenses?.toLocaleString() || '3,456.78'}</div>
+                  <div className="stat-change negative">
+                    <ArrowDownRight size={16} /> 3.4% vs last month
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* Transactions */}
-          <div className="transactions-section">
-            <div className="transactions-header">
-              <h3>Recent Transactions</h3>
-              <button className="view-all-btn" onClick={function() { handleTabChange('transactions'); }}>
-                View All →
-              </button>
-            </div>
+              <div className="charts-section">
+                <div className="chart-card">
+                  <div className="chart-header">
+                    <h3>Portfolio Growth</h3>
+                    <div className="chart-controls">
+                      <button className="chart-btn active" onClick={function() { alert('1D view'); }}>1D</button>
+                      <button className="chart-btn" onClick={function() { alert('1W view'); }}>1W</button>
+                      <button className="chart-btn" onClick={function() { alert('1M view'); }}>1M</button>
+                      <button className="chart-btn" onClick={function() { alert('3M view'); }}>3M</button>
+                      <button className="chart-btn" onClick={function() { alert('ALL view'); }}>ALL</button>
+                    </div>
+                  </div>
+                  <div className="chart-body">
+                    <Bar data={barChartData} options={barOptions} />
+                  </div>
+                </div>
 
-            <div className="table-wrapper">
-              <table className="transactions-table">
-                <thead>
-                  <tr>
-                    <th>Asset Allocation</th>
-                    <th>Recent Transactions</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {displayTransactions.slice(0, 4).map(function(t, index) {
-                    var icons = ['Apple Inc.', 'Starbucks', 'Salary Deposit', 'Amazon'];
-                    var icon = icons[index % icons.length];
-                    var symbols = ['AAPL • Stock', 'Dining • Expense', 'Income', 'Retail • Expense'];
-                    var symbol = symbols[index % symbols.length];
-                    return (
-                      <tr key={t.id || index}>
-                        <td>
-                          <div className="asset-info">
-                            <span className="asset-name">{icon}</span>
-                            <span className="asset-symbol">{symbol}</span>
-                          </div>
-                        </td>
-                        <td className="transaction-desc">{t.description || t.category || 'Transaction'}</td>
-                        <td className={'amount ' + t.type}>
-                          {t.type === 'income' ? '+' : '-'}${Math.abs(parseFloat(t.amount)).toLocaleString()}
-                        </td>
-                        <td><span className="status-badge completed">Completed</span></td>
-                        <td>
-                          <div className="action-buttons">
-                            <button 
-                              className="action-btn edit" 
-                              onClick={function() { openEditModal(t); }}
-                              title="Edit"
-                            >
-                              <Edit2 size={16} />
-                            </button>
-                            <button 
-                              className="action-btn delete" 
-                              onClick={function() { handleDeleteTransaction(t.id); }}
-                              title="Delete"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </td>
+                <div className="chart-card">
+                  <h3>Asset Allocation</h3>
+                  <div className="chart-body pie-chart">
+                    <Pie data={pieData} options={pieOptions} />
+                    <div className="donut-center">
+                      <span className="donut-label">Total</span>
+                      <span className="donut-value">${summary?.net_balance?.toLocaleString() || '124,567'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="transactions-section">
+                <div className="transactions-header">
+                  <h3>Recent Transactions</h3>
+                  <button className="view-all-btn" onClick={function() { handleTabChange('transactions'); }}>
+                    View All →
+                  </button>
+                </div>
+
+                <div className="table-wrapper">
+                  <table className="transactions-table">
+                    <thead>
+                      <tr>
+                        <th>Asset Allocation</th>
+                        <th>Recent Transactions</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Actions</th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                    </thead>
+                    <tbody>
+                      {displayTransactions.slice(0, 4).map(function(t, index) {
+                        var icons = ['Apple Inc.', 'Starbucks', 'Salary Deposit', 'Amazon'];
+                        var icon = icons[index % icons.length];
+                        var symbols = ['AAPL • Stock', 'Dining • Expense', 'Income', 'Retail • Expense'];
+                        var symbol = symbols[index % symbols.length];
+                        return (
+                          <tr key={t.id || index}>
+                            <td>
+                              <div className="asset-info">
+                                <span className="asset-name">{icon}</span>
+                                <span className="asset-symbol">{symbol}</span>
+                              </div>
+                            </td>
+                            <td className="transaction-desc">{t.description || t.category || 'Transaction'}</td>
+                            <td className={'amount ' + t.type}>
+                              {t.type === 'income' ? '+' : '-'}${Math.abs(parseFloat(t.amount)).toLocaleString()}
+                            </td>
+                            <td><span className="status-badge completed">Completed</span></td>
+                            <td>
+                              <div className="action-buttons">
+                                <button 
+                                  className="action-btn edit" 
+                                  onClick={function() { openEditModal(t); }}
+                                  title="Edit"
+                                >
+                                  <Edit2 size={16} />
+                                </button>
+                                <button 
+                                  className="action-btn delete" 
+                                  onClick={function() { handleDeleteTransaction(t.id); }}
+                                  title="Delete"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+
+          {activeTab === 'settings' && (
+            <div className="settings-page">
+              <div className="settings-header">
+                <h2>Settings</h2>
+                <p className="settings-subtitle">Manage your account preferences and security</p>
+              </div>
+
+              <div className="settings-grid">
+                <div className="settings-card">
+                  <div className="settings-card-header">
+                    <div className="settings-icon"><Monitor size={20} /></div>
+                    <h3>Appearance</h3>
+                  </div>
+                  <div className="settings-group">
+                    <label>Theme</label>
+                    <div className="theme-options">
+                      <button 
+                        className={'theme-btn ' + (settings.theme === 'dark' ? 'active' : '')}
+                        onClick={function() { handleSettingChange('theme', 'dark'); }}
+                      >
+                        <Moon size={18} /> Dark
+                      </button>
+                      <button 
+                        className={'theme-btn ' + (settings.theme === 'light' ? 'active' : '')}
+                        onClick={function() { handleSettingChange('theme', 'light'); }}
+                      >
+                        <Sun size={18} /> Light
+                      </button>
+                      <button 
+                        className={'theme-btn ' + (settings.theme === 'system' ? 'active' : '')}
+                        onClick={function() { handleSettingChange('theme', 'system'); }}
+                      >
+                        <Monitor size={18} /> System
+                      </button>
+                    </div>
+                  </div>
+                  <div className="settings-group">
+                    <label>Accent Color</label>
+                    <div className="color-options">
+                      {['cyan', 'blue', 'green', 'pink', 'purple', 'orange'].map(function(color) {
+                        var colorMap = {
+                          'cyan': '#00d9ff',
+                          'blue': '#0099ff',
+                          'green': '#00ff88',
+                          'pink': '#ff3366',
+                          'purple': '#9966ff',
+                          'orange': '#ffaa00'
+                        };
+                        return (
+                          <button 
+                            key={color}
+                            className={'color-btn ' + (settings.accentColor === color ? 'active' : '')}
+                            style={{ background: colorMap[color] }}
+                            onClick={function() { handleSettingChange('accentColor', color); }}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="settings-card">
+                  <div className="settings-card-header">
+                    <div className="settings-icon"><BellIcon size={20} /></div>
+                    <h3>Notifications</h3>
+                  </div>
+                  <div className="settings-group">
+                    <label className="toggle-label">
+                      <span>Email Notifications</span>
+                      <div className="toggle-switch" onClick={function() { handleSettingChange('emailNotifications', !settings.emailNotifications); }}>
+                        <div className={'toggle-slider ' + (settings.emailNotifications ? 'active' : '')}></div>
+                      </div>
+                    </label>
+                  </div>
+                  <div className="settings-group">
+                    <label className="toggle-label">
+                      <span>Push Notifications</span>
+                      <div className="toggle-switch" onClick={function() { handleSettingChange('pushNotifications', !settings.pushNotifications); }}>
+                        <div className={'toggle-slider ' + (settings.pushNotifications ? 'active' : '')}></div>
+                      </div>
+                    </label>
+                  </div>
+                  <div className="settings-group">
+                    <label className="toggle-label">
+                      <span>Weekly Reports</span>
+                      <div className="toggle-switch" onClick={function() { handleSettingChange('weeklyReports', !settings.weeklyReports); }}>
+                        <div className={'toggle-slider ' + (settings.weeklyReports ? 'active' : '')}></div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="settings-card">
+                  <div className="settings-card-header">
+                    <div className="settings-icon"><Shield size={20} /></div>
+                    <h3>Security</h3>
+                  </div>
+                  <div className="settings-group">
+                    <label className="toggle-label">
+                      <span>Two-Factor Authentication</span>
+                      <div className="toggle-switch" onClick={function() { handleSettingChange('twoFactorAuth', !settings.twoFactorAuth); }}>
+                        <div className={'toggle-slider ' + (settings.twoFactorAuth ? 'active' : '')}></div>
+                      </div>
+                    </label>
+                  </div>
+                  <div className="settings-group">
+                    <label>Session Timeout (minutes)</label>
+                    <input 
+                      type="number" 
+                      value={settings.sessionTimeout} 
+                      onChange={function(e) { handleSettingChange('sessionTimeout', parseInt(e.target.value)); }}
+                      className="settings-input"
+                      min="5"
+                      max="120"
+                    />
+                  </div>
+                </div>
+
+                <div className="settings-card">
+                  <div className="settings-card-header">
+                    <div className="settings-icon"><Users size={20} /></div>
+                    <h3>Privacy</h3>
+                  </div>
+                  <div className="settings-group">
+                    <label className="toggle-label">
+                      <span>Share Analytics</span>
+                      <div className="toggle-switch" onClick={function() { handleSettingChange('shareAnalytics', !settings.shareAnalytics); }}>
+                        <div className={'toggle-slider ' + (settings.shareAnalytics ? 'active' : '')}></div>
+                      </div>
+                    </label>
+                  </div>
+                  <div className="settings-group">
+                    <label className="toggle-label">
+                      <span>Public Profile</span>
+                      <div className="toggle-switch" onClick={function() { handleSettingChange('publicProfile', !settings.publicProfile); }}>
+                        <div className={'toggle-slider ' + (settings.publicProfile ? 'active' : '')}></div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="settings-actions">
+                <button className="btn-primary" onClick={saveSettings} disabled={settingsLoading}>
+                  {settingsLoading ? 'Saving...' : 'Save Settings'}
+                </button>
+                {settingsSaved && <span className="settings-saved">✓ Settings saved!</span>}
+              </div>
             </div>
-          </div>
+          )}
+
+          {activeTab === 'help' && (
+            <div className="help-page">
+              <h2>Help & Support</h2>
+              <p className="help-subtitle">How can we help you today?</p>
+              <div className="help-grid">
+                <div className="help-card">
+                  <div className="help-icon"><BookOpen size={24} /></div>
+                  <h3>Documentation</h3>
+                  <p>Read our comprehensive documentation to get started</p>
+                  <button className="help-btn" onClick={function() { alert('Opening documentation...'); }}>View Docs</button>
+                </div>
+                <div className="help-card">
+                  <div className="help-icon"><MessageCircle size={24} /></div>
+                  <h3>Live Chat</h3>
+                  <p>Chat with our support team for immediate assistance</p>
+                  <button className="help-btn" onClick={function() { alert('Starting live chat...'); }}>Start Chat</button>
+                </div>
+                <div className="help-card">
+                  <div className="help-icon"><MailIcon size={24} /></div>
+                  <h3>Email Support</h3>
+                  <p>Send us an email and we'll get back to you within 24 hours</p>
+                  <button className="help-btn" onClick={function() { alert('Opening email support...'); }}>Send Email</button>
+                </div>
+                <div className="help-card">
+                  <div className="help-icon"><Video size={24} /></div>
+                  <h3>Video Tutorials</h3>
+                  <p>Watch step-by-step video tutorials on using Finova</p>
+                  <button className="help-btn" onClick={function() { alert('Opening video tutorials...'); }}>Watch Videos</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab !== 'dashboard' && activeTab !== 'settings' && activeTab !== 'help' && (
+            <div className="page-placeholder">
+              <h2>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h2>
+              <p>This page is under development. Check back soon!</p>
+            </div>
+          )}
         </div>
       </main>
 
-      {/* Modal */}
       {showModal && (
         <div className="modal-overlay" onClick={function(e) { if (e.target === e.currentTarget) closeModal(); }}>
           <div className="modal">
