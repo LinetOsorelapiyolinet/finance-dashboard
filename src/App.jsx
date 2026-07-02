@@ -17,7 +17,6 @@ import {
   LayoutDashboard,
   Wallet,
   TrendingUp,
-  PieChart,
   Target,
   FileText,
   Settings,
@@ -36,45 +35,26 @@ import {
   Download,
   Briefcase,
   Flag,
-  CreditCard,
-  Home,
-  BarChart3,
-  Calendar,
-  Globe,
-  User,
-  Camera,
-  Upload,
   Moon,
   Sun,
   Monitor,
   Shield,
   Mail,
-  Bell as BellIcon,
-  Eye,
-  EyeOff,
-  Save,
-  RefreshCw,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  Activity,
-  Lock,
-  Unlock,
+  Camera,
   Users,
-  Share2,
-  FileText as FileTextIcon,
-  Printer,
-  ExternalLink,
-  HelpCircle as HelpIcon,
-  MessageCircle,
   BookOpen,
+  MessageCircle,
   Video,
-  Mail as MailIcon,
-  Phone,
-  Globe as GlobeIcon,
-  Award,
-  Zap,
-  Sparkles
+  Save,
+  CheckCircle,
+  CreditCard,
+  BarChart3,
+  PieChart,
+  Building2,
+  Landmark,
+  PiggyBank,
+  Coins,
+  RefreshCw
 } from 'lucide-react';
 import api from './api/api';
 import './App.css';
@@ -102,6 +82,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [profileImage, setProfileImage] = useState(null);
   const fileInputRef = useRef(null);
+  const [themeApplied, setThemeApplied] = useState(false);
   
   const [settings, setSettings] = useState({
     emailNotifications: true,
@@ -120,11 +101,16 @@ function App() {
   const [settingsSaved, setSettingsSaved] = useState(false);
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [auditLogs, setAuditLogs] = useState([]);
+  const [currentTheme, setCurrentTheme] = useState('dark');
   
   const [summary, setSummary] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [categoryTotals, setCategoryTotals] = useState([]);
   const [monthlyTrends, setMonthlyTrends] = useState([]);
+  const [accounts, setAccounts] = useState([]);
+  const [investments, setInvestments] = useState([]);
+  const [budgets, setBudgets] = useState([]);
+  const [goals, setGoals] = useState([]);
   
   const [filterType, setFilterType] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
@@ -155,6 +141,35 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredTransactions, setFilteredTransactions] = useState([]);
 
+  const applyTheme = (theme) => {
+    const root = document.documentElement;
+    const body = document.body;
+    
+    if (theme === 'light') {
+      body.style.backgroundColor = '#f0f2f5';
+      body.style.color = '#1a1a2e';
+      root.style.setProperty('--bg-primary', '#f0f2f5');
+      root.style.setProperty('--bg-secondary', '#ffffff');
+      root.style.setProperty('--bg-card', 'rgba(255, 255, 255, 0.9)');
+      root.style.setProperty('--text-primary', '#1a1a2e');
+      root.style.setProperty('--text-secondary', '#4a4a6a');
+      root.style.setProperty('--border-color', 'rgba(0, 0, 0, 0.1)');
+      root.style.setProperty('--shadow-color', 'rgba(0, 0, 0, 0.08)');
+    } else {
+      body.style.backgroundColor = '#0a0e27';
+      body.style.color = '#ffffff';
+      root.style.setProperty('--bg-primary', '#0a0e27');
+      root.style.setProperty('--bg-secondary', '#141829');
+      root.style.setProperty('--bg-card', 'rgba(20, 24, 41, 0.6)');
+      root.style.setProperty('--text-primary', '#ffffff');
+      root.style.setProperty('--text-secondary', '#b0b8d4');
+      root.style.setProperty('--border-color', 'rgba(0, 217, 255, 0.06)');
+      root.style.setProperty('--shadow-color', 'rgba(0, 0, 0, 0.4)');
+    }
+    
+    setThemeApplied(true);
+  };
+
   const loadSettings = async () => {
     if (!token) return;
     try {
@@ -164,6 +179,8 @@ function App() {
       const result = await response.json();
       if (result.success) {
         setSettings(result.data);
+        setCurrentTheme(result.data.theme || 'dark');
+        applyTheme(result.data.theme || 'dark');
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -216,6 +233,10 @@ function App() {
       validateToken();
       loadSettings();
       loadAuditLogs();
+      loadAccounts();
+      loadInvestments();
+      loadBudgets();
+      loadGoals();
     } else {
       setLoading(false);
       setIsAuthenticated(false);
@@ -337,6 +358,66 @@ function App() {
     }
   };
 
+  const loadAccounts = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch((import.meta.env.VITE_API_URL || 'https://finance-backend-api-74z9.onrender.com') + '/api/accounts', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const result = await response.json();
+      if (result.success) {
+        setAccounts(result.data);
+      }
+    } catch (error) {
+      console.error('Error loading accounts:', error);
+    }
+  };
+
+  const loadInvestments = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch((import.meta.env.VITE_API_URL || 'https://finance-backend-api-74z9.onrender.com') + '/api/investments', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const result = await response.json();
+      if (result.success) {
+        setInvestments(result.data);
+      }
+    } catch (error) {
+      console.error('Error loading investments:', error);
+    }
+  };
+
+  const loadBudgets = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch((import.meta.env.VITE_API_URL || 'https://finance-backend-api-74z9.onrender.com') + '/api/budgets', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const result = await response.json();
+      if (result.success) {
+        setBudgets(result.data);
+      }
+    } catch (error) {
+      console.error('Error loading budgets:', error);
+    }
+  };
+
+  const loadGoals = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch((import.meta.env.VITE_API_URL || 'https://finance-backend-api-74z9.onrender.com') + '/api/goals', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const result = await response.json();
+      if (result.success) {
+        setGoals(result.data);
+      }
+    } catch (error) {
+      console.error('Error loading goals:', error);
+    }
+  };
+
   const handleProfileImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -357,6 +438,10 @@ function App() {
   const handleSettingChange = function(key, value) {
     setSettings({ ...settings, [key]: value });
     setSettingsSaved(false);
+    if (key === 'theme') {
+      setCurrentTheme(value);
+      applyTheme(value);
+    }
   };
 
   const saveSettings = async function() {
@@ -782,11 +867,19 @@ function App() {
   }
 
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container" style={{ 
+      backgroundColor: currentTheme === 'light' ? '#f0f2f5' : '#0a0e27',
+      color: currentTheme === 'light' ? '#1a1a2e' : '#ffffff'
+    }}>
       {sidebarOpen && <div className="sidebar-overlay" onClick={function() { setSidebarOpen(false); }}></div>}
 
-      <aside className={'sidebar ' + (sidebarOpen ? 'open' : '')}>
-        <div className="sidebar-header">
+      <aside className={'sidebar ' + (sidebarOpen ? 'open' : '')} style={{
+        backgroundColor: currentTheme === 'light' ? '#ffffff' : 'rgba(10, 14, 39, 0.95)',
+        borderRight: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+      }}>
+        <div className="sidebar-header" style={{
+          borderBottom: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+        }}>
           <div className="logo">
             <div className="logo-icon"><TrendingUp size={24} /></div>
             <span>Finova</span>
@@ -853,8 +946,12 @@ function App() {
           </button>
         </nav>
 
-        <div className="sidebar-footer">
-          <div className="user-card">
+        <div className="sidebar-footer" style={{
+          borderTop: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+        }}>
+          <div className="user-card" style={{
+            backgroundColor: currentTheme === 'light' ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.03)'
+          }}>
             <div className="user-avatar-wrapper" onClick={triggerFileInput}>
               {profileImage ? (
                 <img src={profileImage} alt="Profile" className="user-avatar-img" />
@@ -875,7 +972,9 @@ function App() {
               />
             </div>
             <div className="user-info">
-              <p className="user-name">{user?.name || 'Alex Morgan'}</p>
+              <p className="user-name" style={{ color: currentTheme === 'light' ? '#1a1a2e' : '#ffffff' }}>
+                {user?.name || 'Alex Morgan'}
+              </p>
               <p className="user-role">Premium Member</p>
             </div>
           </div>
@@ -886,17 +985,24 @@ function App() {
       </aside>
 
       <main className="main-content">
-        <header className="main-header">
+        <header className="main-header" style={{
+          backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(10, 14, 39, 0.8)',
+          borderBottom: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+        }}>
           <button className="menu-toggle" onClick={handleSidebarToggle}>
             <Menu size={24} />
           </button>
-          <div className="header-search">
+          <div className="header-search" style={{
+            backgroundColor: currentTheme === 'light' ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.03)',
+            border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+          }}>
             <Search size={18} />
             <input 
               type="text" 
               placeholder="Search transactions, accounts..." 
               value={searchQuery}
               onChange={handleSearch}
+              style={{ color: currentTheme === 'light' ? '#1a1a2e' : '#ffffff' }}
             />
           </div>
           <div className="header-actions">
@@ -920,6 +1026,7 @@ function App() {
         </header>
 
         <div className="dashboard-content">
+          {/* ===== DASHBOARD PAGE ===== */}
           {activeTab === 'dashboard' && (
             <>
               <div className="page-header">
@@ -933,18 +1040,26 @@ function App() {
               </div>
 
               <div className="stats-grid">
-                <div className="stat-card">
+                <div className="stat-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
                   <div className="stat-header">
                     <span className="stat-label">Total Balance</span>
                     <span className="stat-badge success">+12.5%</span>
                   </div>
-                  <div className="stat-value">${summary?.net_balance?.toLocaleString() || '124,567.89'}</div>
+                  <div className="stat-value" style={{ color: currentTheme === 'light' ? '#1a1a2e' : '#ffffff' }}>
+                    ${summary?.net_balance?.toLocaleString() || '124,567.89'}
+                  </div>
                   <div className="stat-change positive">
                     <ArrowUpRight size={16} /> 12.5% vs last month
                   </div>
                 </div>
 
-                <div className="stat-card">
+                <div className="stat-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
                   <div className="stat-header">
                     <span className="stat-label">Monthly Income</span>
                     <span className="stat-badge success">+8.2%</span>
@@ -955,7 +1070,10 @@ function App() {
                   </div>
                 </div>
 
-                <div className="stat-card">
+                <div className="stat-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
                   <div className="stat-header">
                     <span className="stat-label">Expenses</span>
                     <span className="stat-badge danger">+3.4%</span>
@@ -968,7 +1086,10 @@ function App() {
               </div>
 
               <div className="charts-section">
-                <div className="chart-card">
+                <div className="chart-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
                   <div className="chart-header">
                     <h3>Portfolio Growth</h3>
                     <div className="chart-controls">
@@ -984,7 +1105,10 @@ function App() {
                   </div>
                 </div>
 
-                <div className="chart-card">
+                <div className="chart-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
                   <h3>Asset Allocation</h3>
                   <div className="chart-body pie-chart">
                     <Pie data={pieData} options={pieOptions} />
@@ -996,7 +1120,10 @@ function App() {
                 </div>
               </div>
 
-              <div className="transactions-section">
+              <div className="transactions-section" style={{
+                backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+              }}>
                 <div className="transactions-header">
                   <h3>Recent Transactions</h3>
                   <button className="view-all-btn" onClick={function() { handleTabChange('transactions'); }}>
@@ -1062,6 +1189,371 @@ function App() {
             </>
           )}
 
+          {/* ===== ACCOUNTS PAGE ===== */}
+          {activeTab === 'accounts' && (
+            <div className="accounts-page">
+              <div className="page-header">
+                <h1>Accounts</h1>
+                <button className="btn-primary" onClick={function() { alert('Add new account'); }}>
+                  <Plus size={16} /> Add Account
+                </button>
+              </div>
+              <div className="accounts-grid">
+                <div className="account-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
+                  <div className="account-icon"><Wallet size={24} /></div>
+                  <div className="account-info">
+                    <h3>Main Account</h3>
+                    <p className="account-balance">${summary?.net_balance?.toLocaleString() || '124,567.89'}</p>
+                    <span className="account-type">Checking</span>
+                  </div>
+                  <div className="account-actions">
+                    <button className="account-btn" onClick={function() { alert('View transactions'); }}>View</button>
+                  </div>
+                </div>
+                <div className="account-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
+                  <div className="account-icon"><Briefcase size={24} /></div>
+                  <div className="account-info">
+                    <h3>Savings Account</h3>
+                    <p className="account-balance">$45,678.90</p>
+                    <span className="account-type">Savings</span>
+                  </div>
+                  <div className="account-actions">
+                    <button className="account-btn" onClick={function() { alert('View transactions'); }}>View</button>
+                  </div>
+                </div>
+                <div className="account-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
+                  <div className="account-icon"><CreditCard size={24} /></div>
+                  <div className="account-info">
+                    <h3>Investment Account</h3>
+                    <p className="account-balance">$67,890.12</p>
+                    <span className="account-type">Investment</span>
+                  </div>
+                  <div className="account-actions">
+                    <button className="account-btn" onClick={function() { alert('View transactions'); }}>View</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ===== TRANSACTIONS PAGE ===== */}
+          {activeTab === 'transactions' && (
+            <div className="transactions-page">
+              <div className="page-header">
+                <h1>All Transactions</h1>
+                <button className="btn-primary" onClick={openAddModal}>
+                  <Plus size={16} /> Add Transaction
+                </button>
+              </div>
+              <div className="transactions-filters">
+                <select 
+                  className="filter-select" 
+                  value={filterType} 
+                  onChange={function(e) { setFilterType(e.target.value); }}
+                >
+                  <option value="">All Types</option>
+                  <option value="income">Income</option>
+                  <option value="expense">Expense</option>
+                </select>
+                <input 
+                  type="text" 
+                  className="filter-select" 
+                  placeholder="Category" 
+                  value={filterCategory} 
+                  onChange={function(e) { setFilterCategory(e.target.value); }}
+                />
+                <input 
+                  type="date" 
+                  className="filter-select" 
+                  value={startDate} 
+                  onChange={function(e) { setStartDate(e.target.value); }}
+                />
+                <input 
+                  type="date" 
+                  className="filter-select" 
+                  value={endDate} 
+                  onChange={function(e) { setEndDate(e.target.value); }}
+                />
+                <button className="btn-clear" onClick={function() { 
+                  setFilterType(''); 
+                  setFilterCategory(''); 
+                  setStartDate(''); 
+                  setEndDate(''); 
+                }}>
+                  Clear
+                </button>
+              </div>
+              <div className="table-wrapper">
+                <table className="transactions-table full-width">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Description</th>
+                      <th>Category</th>
+                      <th>Type</th>
+                      <th>Amount</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {displayTransactions.map(function(t) {
+                      return (
+                        <tr key={t.id}>
+                          <td>{new Date(t.date).toLocaleDateString()}</td>
+                          <td className="desc">{t.description || '-'}</td>
+                          <td><span className="category-tag">{t.category}</span></td>
+                          <td>
+                            <span className={'type-badge ' + t.type}>
+                              {t.type}
+                            </span>
+                          </td>
+                          <td className={'amount ' + t.type}>
+                            {t.type === 'income' ? '+' : '-'}${Math.abs(parseFloat(t.amount)).toLocaleString()}
+                          </td>
+                          <td>
+                            <div className="action-buttons">
+                              <button onClick={function() { openEditModal(t); }} className="action-btn edit">
+                                <Edit2 size={16} />
+                              </button>
+                              <button onClick={function() { handleDeleteTransaction(t.id); }} className="action-btn delete">
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {displayTransactions.length === 0 && (
+                      <tr><td colSpan="6" className="no-data">No transactions found</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ===== INVESTMENTS PAGE ===== */}
+          {activeTab === 'investments' && (
+            <div className="investments-page">
+              <div className="page-header">
+                <h1>Investments</h1>
+                <button className="btn-primary" onClick={function() { alert('Add investment'); }}>
+                  <Plus size={16} /> Add Investment
+                </button>
+              </div>
+              <div className="investments-grid">
+                <div className="investment-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
+                  <div className="investment-header">
+                    <span className="investment-name">Apple Inc.</span>
+                    <span className="investment-ticker">AAPL</span>
+                  </div>
+                  <div className="investment-details">
+                    <div className="investment-value">$68,512.34</div>
+                    <div className="investment-change positive">+12.5%</div>
+                  </div>
+                  <div className="investment-info">
+                    <span>55% of portfolio</span>
+                    <span className="investment-status">Stock</span>
+                  </div>
+                </div>
+                <div className="investment-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
+                  <div className="investment-header">
+                    <span className="investment-name">Vanguard Bonds</span>
+                    <span className="investment-ticker">VBT</span>
+                  </div>
+                  <div className="investment-details">
+                    <div className="investment-value">$24,913.22</div>
+                    <div className="investment-change positive">+3.2%</div>
+                  </div>
+                  <div className="investment-info">
+                    <span>20% of portfolio</span>
+                    <span className="investment-status">Bond</span>
+                  </div>
+                </div>
+                <div className="investment-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
+                  <div className="investment-header">
+                    <span className="investment-name">Real Estate Fund</span>
+                    <span className="investment-ticker">REF</span>
+                  </div>
+                  <div className="investment-details">
+                    <div className="investment-value">$18,691.18</div>
+                    <div className="investment-change positive">+5.7%</div>
+                  </div>
+                  <div className="investment-info">
+                    <span>15% of portfolio</span>
+                    <span className="investment-status">Real Estate</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ===== BUDGETS PAGE ===== */}
+          {activeTab === 'budgets' && (
+            <div className="budgets-page">
+              <div className="page-header">
+                <h1>Budgets</h1>
+                <button className="btn-primary" onClick={function() { alert('Create budget'); }}>
+                  <Plus size={16} /> Create Budget
+                </button>
+              </div>
+              <div className="budgets-grid">
+                <div className="budget-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
+                  <div className="budget-header">
+                    <h3>Food</h3>
+                    <span className="budget-spent">$1,200 / $1,500</span>
+                  </div>
+                  <div className="budget-bar">
+                    <div className="budget-fill" style={{ width: '80%' }}></div>
+                  </div>
+                  <div className="budget-remaining">Remaining: $300</div>
+                </div>
+                <div className="budget-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
+                  <div className="budget-header">
+                    <h3>Utilities</h3>
+                    <span className="budget-spent">$400 / $500</span>
+                  </div>
+                  <div className="budget-bar">
+                    <div className="budget-fill" style={{ width: '80%' }}></div>
+                  </div>
+                  <div className="budget-remaining">Remaining: $100</div>
+                </div>
+                <div className="budget-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
+                  <div className="budget-header">
+                    <h3>Entertainment</h3>
+                    <span className="budget-spent">$250 / $400</span>
+                  </div>
+                  <div className="budget-bar">
+                    <div className="budget-fill" style={{ width: '62%' }}></div>
+                  </div>
+                  <div className="budget-remaining">Remaining: $150</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ===== GOALS PAGE ===== */}
+          {activeTab === 'goals' && (
+            <div className="goals-page">
+              <div className="page-header">
+                <h1>Financial Goals</h1>
+                <button className="btn-primary" onClick={function() { alert('Set goal'); }}>
+                  <Plus size={16} /> Set Goal
+                </button>
+              </div>
+              <div className="goals-grid">
+                <div className="goal-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
+                  <div className="goal-header">
+                    <h3>Emergency Fund</h3>
+                    <span className="goal-target">$10,000</span>
+                  </div>
+                  <div className="goal-progress">
+                    <div className="goal-fill" style={{ width: '75%' }}></div>
+                  </div>
+                  <div className="goal-details">
+                    <span>$7,500 saved</span>
+                    <span className="goal-status">On track</span>
+                  </div>
+                </div>
+                <div className="goal-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
+                  <div className="goal-header">
+                    <h3>Vacation Fund</h3>
+                    <span className="goal-target">$5,000</span>
+                  </div>
+                  <div className="goal-progress">
+                    <div className="goal-fill" style={{ width: '40%' }}></div>
+                  </div>
+                  <div className="goal-details">
+                    <span>$2,000 saved</span>
+                    <span className="goal-status">In progress</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ===== REPORTS PAGE ===== */}
+          {activeTab === 'reports' && (
+            <div className="reports-page">
+              <div className="page-header">
+                <h1>Reports</h1>
+                <div className="page-actions">
+                  <button className="btn-outline" onClick={handleExport}>Export CSV</button>
+                  <button className="btn-primary" onClick={function() { alert('Generate report'); }}>Generate Report</button>
+                </div>
+              </div>
+              <div className="reports-grid">
+                <div className="report-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
+                  <div className="report-icon"><FileText size={24} /></div>
+                  <div className="report-info">
+                    <h3>Monthly Summary</h3>
+                    <p>Generated: {new Date().toLocaleDateString()}</p>
+                  </div>
+                  <button className="report-btn" onClick={function() { alert('Download report'); }}>Download</button>
+                </div>
+                <div className="report-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
+                  <div className="report-icon"><BarChart3 size={24} /></div>
+                  <div className="report-info">
+                    <h3>Yearly Trends</h3>
+                    <p>Generated: {new Date().toLocaleDateString()}</p>
+                  </div>
+                  <button className="report-btn" onClick={function() { alert('Download report'); }}>Download</button>
+                </div>
+                <div className="report-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
+                  <div className="report-icon"><PieChart size={24} /></div>
+                  <div className="report-info">
+                    <h3>Category Breakdown</h3>
+                    <p>Generated: {new Date().toLocaleDateString()}</p>
+                  </div>
+                  <button className="report-btn" onClick={function() { alert('Download report'); }}>Download</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ===== SETTINGS PAGE ===== */}
           {activeTab === 'settings' && (
             <div className="settings-page">
               <div className="settings-header">
@@ -1070,7 +1562,10 @@ function App() {
               </div>
 
               <div className="settings-grid">
-                <div className="settings-card">
+                <div className="settings-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
                   <div className="settings-card-header">
                     <div className="settings-icon"><Monitor size={20} /></div>
                     <h3>Appearance</h3>
@@ -1121,11 +1616,22 @@ function App() {
                       })}
                     </div>
                   </div>
+                  <div className="settings-group">
+                    <label className="toggle-label">
+                      <span>Compact View</span>
+                      <div className="toggle-switch" onClick={function() { handleSettingChange('compactView', !settings.compactView); }}>
+                        <div className={'toggle-slider ' + (settings.compactView ? 'active' : '')}></div>
+                      </div>
+                    </label>
+                  </div>
                 </div>
 
-                <div className="settings-card">
+                <div className="settings-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
                   <div className="settings-card-header">
-                    <div className="settings-icon"><BellIcon size={20} /></div>
+                    <div className="settings-icon"><Bell size={20} /></div>
                     <h3>Notifications</h3>
                   </div>
                   <div className="settings-group">
@@ -1152,9 +1658,20 @@ function App() {
                       </div>
                     </label>
                   </div>
+                  <div className="settings-group">
+                    <label className="toggle-label">
+                      <span>Monthly Reports</span>
+                      <div className="toggle-switch" onClick={function() { handleSettingChange('monthlyReports', !settings.monthlyReports); }}>
+                        <div className={'toggle-slider ' + (settings.monthlyReports ? 'active' : '')}></div>
+                      </div>
+                    </label>
+                  </div>
                 </div>
 
-                <div className="settings-card">
+                <div className="settings-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
                   <div className="settings-card-header">
                     <div className="settings-icon"><Shield size={20} /></div>
                     <h3>Security</h3>
@@ -1180,7 +1697,10 @@ function App() {
                   </div>
                 </div>
 
-                <div className="settings-card">
+                <div className="settings-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
                   <div className="settings-card-header">
                     <div className="settings-icon"><Users size={20} /></div>
                     <h3>Privacy</h3>
@@ -1208,35 +1728,50 @@ function App() {
                 <button className="btn-primary" onClick={saveSettings} disabled={settingsLoading}>
                   {settingsLoading ? 'Saving...' : 'Save Settings'}
                 </button>
-                {settingsSaved && <span className="settings-saved">✓ Settings saved!</span>}
+                {settingsSaved && <span className="settings-saved"><CheckCircle size={16} /> Settings saved!</span>}
               </div>
             </div>
           )}
 
+          {/* ===== HELP PAGE ===== */}
           {activeTab === 'help' && (
             <div className="help-page">
-              <h2>Help & Support</h2>
+              <div className="page-header">
+                <h1>Help & Support</h1>
+              </div>
               <p className="help-subtitle">How can we help you today?</p>
               <div className="help-grid">
-                <div className="help-card">
+                <div className="help-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
                   <div className="help-icon"><BookOpen size={24} /></div>
                   <h3>Documentation</h3>
                   <p>Read our comprehensive documentation to get started</p>
                   <button className="help-btn" onClick={function() { alert('Opening documentation...'); }}>View Docs</button>
                 </div>
-                <div className="help-card">
+                <div className="help-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
                   <div className="help-icon"><MessageCircle size={24} /></div>
                   <h3>Live Chat</h3>
                   <p>Chat with our support team for immediate assistance</p>
                   <button className="help-btn" onClick={function() { alert('Starting live chat...'); }}>Start Chat</button>
                 </div>
-                <div className="help-card">
-                  <div className="help-icon"><MailIcon size={24} /></div>
+                <div className="help-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
+                  <div className="help-icon"><Mail size={24} /></div>
                   <h3>Email Support</h3>
                   <p>Send us an email and we'll get back to you within 24 hours</p>
                   <button className="help-btn" onClick={function() { alert('Opening email support...'); }}>Send Email</button>
                 </div>
-                <div className="help-card">
+                <div className="help-card" style={{
+                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                }}>
                   <div className="help-icon"><Video size={24} /></div>
                   <h3>Video Tutorials</h3>
                   <p>Watch step-by-step video tutorials on using Finova</p>
@@ -1245,19 +1780,16 @@ function App() {
               </div>
             </div>
           )}
-
-          {activeTab !== 'dashboard' && activeTab !== 'settings' && activeTab !== 'help' && (
-            <div className="page-placeholder">
-              <h2>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h2>
-              <p>This page is under development. Check back soon!</p>
-            </div>
-          )}
         </div>
       </main>
 
+      {/* ===== MODAL ===== */}
       {showModal && (
         <div className="modal-overlay" onClick={function(e) { if (e.target === e.currentTarget) closeModal(); }}>
-          <div className="modal">
+          <div className="modal" style={{
+            backgroundColor: currentTheme === 'light' ? '#ffffff' : '#141829',
+            border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.15)'
+          }}>
             <div className="modal-header">
               <h3>{editingTransaction ? 'Edit Transaction' : 'Add Transaction'}</h3>
               <button className="modal-close" onClick={closeModal}>
