@@ -108,9 +108,6 @@ function App() {
   const [categoryTotals, setCategoryTotals] = useState([]);
   const [monthlyTrends, setMonthlyTrends] = useState([]);
   const [accounts, setAccounts] = useState([]);
-  const [investments, setInvestments] = useState([]);
-  const [budgets, setBudgets] = useState([]);
-  const [goals, setGoals] = useState([]);
   
   const [filterType, setFilterType] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
@@ -141,6 +138,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredTransactions, setFilteredTransactions] = useState([]);
 
+  // ===== THEME FUNCTIONS =====
   const applyTheme = (theme) => {
     const root = document.documentElement;
     const body = document.body;
@@ -155,6 +153,14 @@ function App() {
       root.style.setProperty('--text-secondary', '#4a4a6a');
       root.style.setProperty('--border-color', 'rgba(0, 0, 0, 0.1)');
       root.style.setProperty('--shadow-color', 'rgba(0, 0, 0, 0.08)');
+    } else if (theme === 'system') {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (prefersDark) {
+        applyTheme('dark');
+      } else {
+        applyTheme('light');
+      }
+      return;
     } else {
       body.style.backgroundColor = '#0a0e27';
       body.style.color = '#ffffff';
@@ -168,8 +174,22 @@ function App() {
     }
     
     setThemeApplied(true);
+    setCurrentTheme(theme);
   };
 
+  // Listen for system theme changes
+  useEffect(() => {
+    if (settings.theme === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handler = (e) => {
+        applyTheme('system');
+      };
+      mediaQuery.addEventListener('change', handler);
+      return () => mediaQuery.removeEventListener('change', handler);
+    }
+  }, [settings.theme]);
+
+  // ===== LOAD SETTINGS =====
   const loadSettings = async () => {
     if (!token) return;
     try {
@@ -199,6 +219,21 @@ function App() {
       }
     } catch (error) {
       console.error('Error loading audit logs:', error);
+    }
+  };
+
+  const loadAccounts = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch((import.meta.env.VITE_API_URL || 'https://finance-backend-api-74z9.onrender.com') + '/api/accounts', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const result = await response.json();
+      if (result.success) {
+        setAccounts(result.data);
+      }
+    } catch (error) {
+      console.error('Error loading accounts:', error);
     }
   };
 
@@ -234,9 +269,6 @@ function App() {
       loadSettings();
       loadAuditLogs();
       loadAccounts();
-      loadInvestments();
-      loadBudgets();
-      loadGoals();
     } else {
       setLoading(false);
       setIsAuthenticated(false);
@@ -358,66 +390,6 @@ function App() {
     }
   };
 
-  const loadAccounts = async () => {
-    if (!token) return;
-    try {
-      const response = await fetch((import.meta.env.VITE_API_URL || 'https://finance-backend-api-74z9.onrender.com') + '/api/accounts', {
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
-      const result = await response.json();
-      if (result.success) {
-        setAccounts(result.data);
-      }
-    } catch (error) {
-      console.error('Error loading accounts:', error);
-    }
-  };
-
-  const loadInvestments = async () => {
-    if (!token) return;
-    try {
-      const response = await fetch((import.meta.env.VITE_API_URL || 'https://finance-backend-api-74z9.onrender.com') + '/api/investments', {
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
-      const result = await response.json();
-      if (result.success) {
-        setInvestments(result.data);
-      }
-    } catch (error) {
-      console.error('Error loading investments:', error);
-    }
-  };
-
-  const loadBudgets = async () => {
-    if (!token) return;
-    try {
-      const response = await fetch((import.meta.env.VITE_API_URL || 'https://finance-backend-api-74z9.onrender.com') + '/api/budgets', {
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
-      const result = await response.json();
-      if (result.success) {
-        setBudgets(result.data);
-      }
-    } catch (error) {
-      console.error('Error loading budgets:', error);
-    }
-  };
-
-  const loadGoals = async () => {
-    if (!token) return;
-    try {
-      const response = await fetch((import.meta.env.VITE_API_URL || 'https://finance-backend-api-74z9.onrender.com') + '/api/goals', {
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
-      const result = await response.json();
-      if (result.success) {
-        setGoals(result.data);
-      }
-    } catch (error) {
-      console.error('Error loading goals:', error);
-    }
-  };
-
   const handleProfileImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -435,11 +407,14 @@ function App() {
     fileInputRef.current.click();
   };
 
+  // ===== SETTINGS HANDLERS =====
   const handleSettingChange = function(key, value) {
-    setSettings({ ...settings, [key]: value });
+    const newSettings = { ...settings, [key]: value };
+    setSettings(newSettings);
     setSettingsSaved(false);
+    
+    // Apply theme immediately when theme changes
     if (key === 'theme') {
-      setCurrentTheme(value);
       applyTheme(value);
     }
   };
@@ -660,6 +635,7 @@ function App() {
     alert('Transactions exported successfully!');
   };
 
+  // ===== CHART DATA =====
   var barChartData = {
     labels: monthlyTrends.length > 0 ? monthlyTrends.map(function(m) { return m.month_name.substring(0, 3); }) : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     datasets: [
@@ -1199,48 +1175,28 @@ function App() {
                 </button>
               </div>
               <div className="accounts-grid">
-                <div className="account-card" style={{
-                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
-                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
-                }}>
-                  <div className="account-icon"><Wallet size={24} /></div>
-                  <div className="account-info">
-                    <h3>Main Account</h3>
-                    <p className="account-balance">${summary?.net_balance?.toLocaleString() || '124,567.89'}</p>
-                    <span className="account-type">Checking</span>
+                {accounts.length > 0 ? accounts.map(function(acc) {
+                  return (
+                    <div key={acc.id} className="account-card" style={{
+                      backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
+                      border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
+                    }}>
+                      <div className="account-icon"><Wallet size={24} /></div>
+                      <div className="account-info">
+                        <h3>{acc.name}</h3>
+                        <p className="account-balance">${acc.balance?.toLocaleString() || '0.00'}</p>
+                        <span className="account-type">{acc.type}</span>
+                      </div>
+                      <div className="account-actions">
+                        <button className="account-btn" onClick={function() { alert('View transactions for ' + acc.name); }}>View</button>
+                      </div>
+                    </div>
+                  );
+                }) : (
+                  <div className="no-data" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px 0' }}>
+                    <p>No accounts found. Add your first account!</p>
                   </div>
-                  <div className="account-actions">
-                    <button className="account-btn" onClick={function() { alert('View transactions'); }}>View</button>
-                  </div>
-                </div>
-                <div className="account-card" style={{
-                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
-                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
-                }}>
-                  <div className="account-icon"><Briefcase size={24} /></div>
-                  <div className="account-info">
-                    <h3>Savings Account</h3>
-                    <p className="account-balance">$45,678.90</p>
-                    <span className="account-type">Savings</span>
-                  </div>
-                  <div className="account-actions">
-                    <button className="account-btn" onClick={function() { alert('View transactions'); }}>View</button>
-                  </div>
-                </div>
-                <div className="account-card" style={{
-                  backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
-                  border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
-                }}>
-                  <div className="account-icon"><CreditCard size={24} /></div>
-                  <div className="account-info">
-                    <h3>Investment Account</h3>
-                    <p className="account-balance">$67,890.12</p>
-                    <span className="account-type">Investment</span>
-                  </div>
-                  <div className="account-actions">
-                    <button className="account-btn" onClick={function() { alert('View transactions'); }}>View</button>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           )}
@@ -1553,7 +1509,7 @@ function App() {
             </div>
           )}
 
-          {/* ===== SETTINGS PAGE ===== */}
+          {/* ===== SETTINGS PAGE - FULLY FUNCTIONAL ===== */}
           {activeTab === 'settings' && (
             <div className="settings-page">
               <div className="settings-header">
@@ -1562,6 +1518,7 @@ function App() {
               </div>
 
               <div className="settings-grid">
+                {/* Appearance Settings */}
                 <div className="settings-card" style={{
                   backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
                   border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
@@ -1626,6 +1583,7 @@ function App() {
                   </div>
                 </div>
 
+                {/* Notification Settings */}
                 <div className="settings-card" style={{
                   backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
                   border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
@@ -1668,6 +1626,7 @@ function App() {
                   </div>
                 </div>
 
+                {/* Security Settings */}
                 <div className="settings-card" style={{
                   backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
                   border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
@@ -1689,7 +1648,7 @@ function App() {
                     <input 
                       type="number" 
                       value={settings.sessionTimeout} 
-                      onChange={function(e) { handleSettingChange('sessionTimeout', parseInt(e.target.value)); }}
+                      onChange={function(e) { handleSettingChange('sessionTimeout', parseInt(e.target.value) || 30); }}
                       className="settings-input"
                       min="5"
                       max="120"
@@ -1697,6 +1656,7 @@ function App() {
                   </div>
                 </div>
 
+                {/* Privacy Settings */}
                 <div className="settings-card" style={{
                   backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
                   border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
@@ -1724,11 +1684,28 @@ function App() {
                 </div>
               </div>
 
+              {/* Save Button */}
               <div className="settings-actions">
-                <button className="btn-primary" onClick={saveSettings} disabled={settingsLoading}>
-                  {settingsLoading ? 'Saving...' : 'Save Settings'}
+                <button 
+                  className="btn-primary" 
+                  onClick={saveSettings} 
+                  disabled={settingsLoading}
+                  style={{
+                    backgroundColor: settingsLoading ? '#666' : undefined,
+                    cursor: settingsLoading ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {settingsLoading ? (
+                    <span>Saving...</span>
+                  ) : (
+                    <span><Save size={16} /> Save Settings</span>
+                  )}
                 </button>
-                {settingsSaved && <span className="settings-saved"><CheckCircle size={16} /> Settings saved!</span>}
+                {settingsSaved && (
+                  <span className="settings-saved">
+                    <CheckCircle size={16} /> Settings saved!
+                  </span>
+                )}
               </div>
             </div>
           )}
