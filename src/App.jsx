@@ -147,9 +147,26 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredTransactions, setFilteredTransactions] = useState([]);
 
-  const applyTheme = (theme) => {
+  const accentColors = {
+    cyan: '#00d9ff',
+    blue: '#0099ff',
+    green: '#00ff88',
+    pink: '#ff3366',
+    purple: '#9966ff',
+    orange: '#ffaa00'
+  };
+
+  const applyTheme = (theme, accentColor) => {
     const root = document.documentElement;
     const body = document.body;
+    
+    const accent = accentColor || settings.accentColor || 'cyan';
+    const accentHex = accentColors[accent] || '#00d9ff';
+    
+    root.style.setProperty('--accent-primary', accentHex);
+    root.style.setProperty('--accent-secondary', accentHex);
+    root.style.setProperty('--accent-glow', accentHex + '25');
+    root.style.setProperty('--accent-glow-strong', accentHex + '40');
     
     if (theme === 'light') {
       body.style.backgroundColor = '#f0f2f5';
@@ -163,7 +180,7 @@ function App() {
       root.style.setProperty('--shadow-color', 'rgba(0, 0, 0, 0.08)');
     } else if (theme === 'system') {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      applyTheme(prefersDark ? 'dark' : 'light');
+      applyTheme(prefersDark ? 'dark' : 'light', accent);
       return;
     } else {
       body.style.backgroundColor = '#0a0e27';
@@ -177,7 +194,6 @@ function App() {
       root.style.setProperty('--shadow-color', 'rgba(0, 0, 0, 0.4)');
     }
     
-    setThemeApplied(true);
     setCurrentTheme(theme);
   };
 
@@ -185,12 +201,12 @@ function App() {
     if (settings.theme === 'system') {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const handler = function(e) {
-        applyTheme('system');
+        applyTheme('system', settings.accentColor);
       };
       mediaQuery.addEventListener('change', handler);
       return function() { mediaQuery.removeEventListener('change', handler); };
     }
-  }, [settings.theme]);
+  }, [settings.theme, settings.accentColor]);
 
   const loadSettings = async function() {
     if (!token) return;
@@ -202,7 +218,7 @@ function App() {
       if (result.success) {
         setSettings(result.data);
         setCurrentTheme(result.data.theme || 'dark');
-        applyTheme(result.data.theme || 'dark');
+        applyTheme(result.data.theme || 'dark', result.data.accentColor || 'cyan');
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -414,7 +430,9 @@ function App() {
     setSettings(newSettings);
     setSettingsSaved(false);
     if (key === 'theme') {
-      applyTheme(value);
+      applyTheme(value, newSettings.accentColor);
+    } else if (key === 'accentColor') {
+      applyTheme(settings.theme, value);
     }
   };
 
