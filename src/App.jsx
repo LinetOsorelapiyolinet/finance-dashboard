@@ -50,11 +50,14 @@ import {
   CreditCard,
   BarChart3,
   PieChart,
-  Building2,
   Landmark,
   PiggyBank,
   Coins,
-  RefreshCw
+  RefreshCw,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  Building2
 } from 'lucide-react';
 import api from './api/api';
 import './App.css';
@@ -82,7 +85,6 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [profileImage, setProfileImage] = useState(null);
   const fileInputRef = useRef(null);
-  const [themeApplied, setThemeApplied] = useState(false);
   
   const [settings, setSettings] = useState({
     emailNotifications: true,
@@ -115,13 +117,20 @@ function App() {
   const [endDate, setEndDate] = useState('');
   
   const [showModal, setShowModal] = useState(false);
+  const [showAccountModal, setShowAccountModal] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
+  const [editingAccount, setEditingAccount] = useState(null);
   const [formData, setFormData] = useState({
     amount: '',
     type: 'expense',
     category: '',
     date: new Date().toISOString().split('T')[0],
     description: ''
+  });
+  const [accountFormData, setAccountFormData] = useState({
+    name: '',
+    type: 'Checking',
+    balance: 0
   });
   
   const [loginEmail, setLoginEmail] = useState('');
@@ -138,7 +147,6 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredTransactions, setFilteredTransactions] = useState([]);
 
-  // ===== THEME FUNCTIONS =====
   const applyTheme = (theme) => {
     const root = document.documentElement;
     const body = document.body;
@@ -155,11 +163,7 @@ function App() {
       root.style.setProperty('--shadow-color', 'rgba(0, 0, 0, 0.08)');
     } else if (theme === 'system') {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (prefersDark) {
-        applyTheme('dark');
-      } else {
-        applyTheme('light');
-      }
+      applyTheme(prefersDark ? 'dark' : 'light');
       return;
     } else {
       body.style.backgroundColor = '#0a0e27';
@@ -177,20 +181,18 @@ function App() {
     setCurrentTheme(theme);
   };
 
-  // Listen for system theme changes
   useEffect(() => {
     if (settings.theme === 'system') {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const handler = (e) => {
+      const handler = function(e) {
         applyTheme('system');
       };
       mediaQuery.addEventListener('change', handler);
-      return () => mediaQuery.removeEventListener('change', handler);
+      return function() { mediaQuery.removeEventListener('change', handler); };
     }
   }, [settings.theme]);
 
-  // ===== LOAD SETTINGS =====
-  const loadSettings = async () => {
+  const loadSettings = async function() {
     if (!token) return;
     try {
       const response = await fetch((import.meta.env.VITE_API_URL || 'https://finance-backend-api-74z9.onrender.com') + '/api/settings', {
@@ -207,7 +209,7 @@ function App() {
     }
   };
 
-  const loadAuditLogs = async () => {
+  const loadAuditLogs = async function() {
     if (!token) return;
     try {
       const response = await fetch((import.meta.env.VITE_API_URL || 'https://finance-backend-api-74z9.onrender.com') + '/api/audit-logs', {
@@ -222,7 +224,7 @@ function App() {
     }
   };
 
-  const loadAccounts = async () => {
+  const loadAccounts = async function() {
     if (!token) return;
     try {
       const response = await fetch((import.meta.env.VITE_API_URL || 'https://finance-backend-api-74z9.onrender.com') + '/api/accounts', {
@@ -237,14 +239,14 @@ function App() {
     }
   };
 
-  useEffect(() => {
+  useEffect(function() {
     const savedImage = localStorage.getItem('profileImage');
     if (savedImage) {
       setProfileImage(savedImage);
     }
   }, []);
 
-  useEffect(() => {
+  useEffect(function() {
     const params = new URLSearchParams(window.location.search);
     const tokenParam = params.get('token');
     const error = params.get('error');
@@ -263,7 +265,7 @@ function App() {
     }
   }, []);
 
-  useEffect(() => {
+  useEffect(function() {
     if (token) {
       validateToken();
       loadSettings();
@@ -275,13 +277,13 @@ function App() {
     }
   }, [token]);
 
-  useEffect(() => {
+  useEffect(function() {
     if (isAuthenticated && token) {
       fetchAllData();
     }
   }, [isAuthenticated, token]);
 
-  useEffect(() => {
+  useEffect(function() {
     if (isAuthenticated && token) {
       fetchTransactions();
       fetchDashboardData();
@@ -289,12 +291,12 @@ function App() {
     }
   }, [filterType, filterCategory, startDate, endDate, isAuthenticated, token]);
 
-  useEffect(() => {
+  useEffect(function() {
     if (searchQuery.trim() === '') {
       setFilteredTransactions(transactions);
     } else {
-      const query = searchQuery.toLowerCase();
-      const filtered = transactions.filter(function(t) {
+      var query = searchQuery.toLowerCase();
+      var filtered = transactions.filter(function(t) {
         return (
           (t.description && t.description.toLowerCase().includes(query)) ||
           (t.category && t.category.toLowerCase().includes(query)) ||
@@ -305,10 +307,10 @@ function App() {
     }
   }, [searchQuery, transactions]);
 
-  const validateToken = async () => {
+  const validateToken = async function() {
     setLoading(true);
     try {
-      const result = await api.getMe(token);
+      var result = await api.getMe(token);
       if (result.success) {
         setUser(result.data);
         setIsAuthenticated(true);
@@ -326,7 +328,7 @@ function App() {
     setLoading(false);
   };
 
-  const fetchAllData = async () => {
+  const fetchAllData = async function() {
     await Promise.all([
       fetchDashboardData(),
       fetchTransactions(),
@@ -335,10 +337,10 @@ function App() {
     ]);
   };
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async function() {
     if (!token) return;
     try {
-      const result = await api.getDashboardSummary(token, startDate, endDate);
+      var result = await api.getDashboardSummary(token, startDate, endDate);
       if (result.success) {
         setSummary(result.data);
       }
@@ -347,16 +349,16 @@ function App() {
     }
   };
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = async function() {
     if (!token) return;
-    const filters = {};
+    var filters = {};
     if (filterType) filters.type = filterType;
     if (filterCategory) filters.category = filterCategory;
     if (startDate) filters.startDate = startDate;
     if (endDate) filters.endDate = endDate;
     
     try {
-      const result = await api.getTransactions(token, filters);
+      var result = await api.getTransactions(token, filters);
       if (result.success) {
         setTransactions(result.data);
         setFilteredTransactions(result.data);
@@ -366,10 +368,10 @@ function App() {
     }
   };
 
-  const fetchCategoryTotals = async () => {
+  const fetchCategoryTotals = async function() {
     if (!token) return;
     try {
-      const result = await api.getCategoryTotals(token, startDate, endDate);
+      var result = await api.getCategoryTotals(token, startDate, endDate);
       if (result.success) {
         setCategoryTotals(result.data);
       }
@@ -378,10 +380,10 @@ function App() {
     }
   };
 
-  const fetchMonthlyTrends = async () => {
+  const fetchMonthlyTrends = async function() {
     if (!token) return;
     try {
-      const result = await api.getMonthlyTrends(token, new Date().getFullYear());
+      var result = await api.getMonthlyTrends(token, new Date().getFullYear());
       if (result.success) {
         setMonthlyTrends(result.data);
       }
@@ -390,12 +392,12 @@ function App() {
     }
   };
 
-  const handleProfileImageUpload = (event) => {
-    const file = event.target.files[0];
+  const handleProfileImageUpload = function(event) {
+    var file = event.target.files[0];
     if (file) {
-      const reader = new FileReader();
+      var reader = new FileReader();
       reader.onloadend = function() {
-        const imageData = reader.result;
+        var imageData = reader.result;
         setProfileImage(imageData);
         localStorage.setItem('profileImage', imageData);
       };
@@ -407,13 +409,10 @@ function App() {
     fileInputRef.current.click();
   };
 
-  // ===== SETTINGS HANDLERS =====
   const handleSettingChange = function(key, value) {
-    const newSettings = { ...settings, [key]: value };
+    var newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
     setSettingsSaved(false);
-    
-    // Apply theme immediately when theme changes
     if (key === 'theme') {
       applyTheme(value);
     }
@@ -422,7 +421,7 @@ function App() {
   const saveSettings = async function() {
     setSettingsLoading(true);
     try {
-      const response = await fetch((import.meta.env.VITE_API_URL || 'https://finance-backend-api-74z9.onrender.com') + '/api/settings', {
+      var response = await fetch((import.meta.env.VITE_API_URL || 'https://finance-backend-api-74z9.onrender.com') + '/api/settings', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -430,7 +429,7 @@ function App() {
         },
         body: JSON.stringify(settings)
       });
-      const result = await response.json();
+      var result = await response.json();
       if (result.success) {
         setSettingsSaved(true);
         setTimeout(function() { setSettingsSaved(false); }, 3000);
@@ -464,7 +463,7 @@ function App() {
     setLoginError('');
     setLoading(true);
     try {
-      const result = await api.login(loginEmail, loginPassword);
+      var result = await api.login(loginEmail, loginPassword);
       if (result.success) {
         var newToken = result.data.token;
         localStorage.setItem('token', newToken);
@@ -472,6 +471,26 @@ function App() {
         setUser(result.data);
         setIsAuthenticated(true);
       } else {
+        if (result.message && result.message.includes('admin')) {
+          try {
+            const adminResponse = await fetch((import.meta.env.VITE_API_URL || 'https://finance-backend-api-74z9.onrender.com') + '/api/auth/admin-login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: loginEmail, password: loginPassword })
+            });
+            const adminResult = await adminResponse.json();
+            if (adminResult.success) {
+              var newToken = adminResult.data.token;
+              localStorage.setItem('token', newToken);
+              setToken(newToken);
+              setUser(adminResult.data);
+              setIsAuthenticated(true);
+              return;
+            }
+          } catch (adminError) {
+            console.error('Admin login error:', adminError);
+          }
+        }
         setLoginError(result.message || 'Login failed');
       }
     } catch (error) {
@@ -524,6 +543,7 @@ function App() {
     setTransactions([]);
     setCategoryTotals([]);
     setMonthlyTrends([]);
+    setAccounts([]);
     setProfileImage(null);
     localStorage.removeItem('profileImage');
   };
@@ -609,6 +629,99 @@ function App() {
     setEditingTransaction(null);
   };
 
+  const openAddAccountModal = function() {
+    setEditingAccount(null);
+    setAccountFormData({
+      name: '',
+      type: 'Checking',
+      balance: 0
+    });
+    setShowAccountModal(true);
+  };
+
+  const openEditAccountModal = function(account) {
+    setEditingAccount(account);
+    setAccountFormData({
+      name: account.name,
+      type: account.type,
+      balance: account.balance
+    });
+    setShowAccountModal(true);
+  };
+
+  const closeAccountModal = function() {
+    setShowAccountModal(false);
+    setEditingAccount(null);
+  };
+
+  const handleSubmitAccount = async function(e) {
+    e.preventDefault();
+    if (!token) {
+      alert('Please login first');
+      return;
+    }
+    setLoading(true);
+    try {
+      var url = (import.meta.env.VITE_API_URL || 'https://finance-backend-api-74z9.onrender.com') + '/api/accounts';
+      var method = 'POST';
+      
+      if (editingAccount) {
+        url = url + '/' + editingAccount.id;
+        method = 'PUT';
+      }
+      
+      var response = await fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify(accountFormData)
+      });
+      var result = await response.json();
+      
+      if (result.success) {
+        setShowAccountModal(false);
+        setEditingAccount(null);
+        setAccountFormData({
+          name: '',
+          type: 'Checking',
+          balance: 0
+        });
+        await loadAccounts();
+        alert(editingAccount ? 'Account updated successfully!' : 'Account added successfully!');
+      } else {
+        alert(result.message || 'Error saving account');
+      }
+    } catch (error) {
+      alert('Error: ' + error.message);
+    }
+    setLoading(false);
+  };
+
+  const handleDeleteAccount = async function(id) {
+    if (!token) return;
+    if (window.confirm('Are you sure you want to delete this account?')) {
+      try {
+        var response = await fetch((import.meta.env.VITE_API_URL || 'https://finance-backend-api-74z9.onrender.com') + '/api/accounts/' + id, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': 'Bearer ' + token
+          }
+        });
+        var result = await response.json();
+        if (result.success) {
+          await loadAccounts();
+          alert('Account deleted successfully!');
+        } else {
+          alert(result.message || 'Error deleting account');
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    }
+  };
+
   const handleExport = function() {
     if (transactions.length === 0) {
       alert('No transactions to export');
@@ -635,7 +748,6 @@ function App() {
     alert('Transactions exported successfully!');
   };
 
-  // ===== CHART DATA =====
   var barChartData = {
     labels: monthlyTrends.length > 0 ? monthlyTrends.map(function(m) { return m.month_name.substring(0, 3); }) : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     datasets: [
@@ -1002,7 +1114,6 @@ function App() {
         </header>
 
         <div className="dashboard-content">
-          {/* ===== DASHBOARD PAGE ===== */}
           {activeTab === 'dashboard' && (
             <>
               <div className="page-header">
@@ -1165,12 +1276,11 @@ function App() {
             </>
           )}
 
-          {/* ===== ACCOUNTS PAGE ===== */}
           {activeTab === 'accounts' && (
             <div className="accounts-page">
               <div className="page-header">
                 <h1>Accounts</h1>
-                <button className="btn-primary" onClick={function() { alert('Add new account'); }}>
+                <button className="btn-primary" onClick={openAddAccountModal}>
                   <Plus size={16} /> Add Account
                 </button>
               </div>
@@ -1188,20 +1298,20 @@ function App() {
                         <span className="account-type">{acc.type}</span>
                       </div>
                       <div className="account-actions">
-                        <button className="account-btn" onClick={function() { alert('View transactions for ' + acc.name); }}>View</button>
+                        <button className="account-btn" onClick={function() { openEditAccountModal(acc); }}>Edit</button>
+                        <button className="account-btn delete" onClick={function() { handleDeleteAccount(acc.id); }}>Delete</button>
                       </div>
                     </div>
                   );
                 }) : (
-                  <div className="no-data" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px 0' }}>
-                    <p>No accounts found. Add your first account!</p>
+                  <div className="no-data" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px 0' }}>
+                    <p style={{ color: '#7a8299', fontSize: '16px' }}>No accounts found. Add your first account!</p>
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* ===== TRANSACTIONS PAGE ===== */}
           {activeTab === 'transactions' && (
             <div className="transactions-page">
               <div className="page-header">
@@ -1297,7 +1407,6 @@ function App() {
             </div>
           )}
 
-          {/* ===== INVESTMENTS PAGE ===== */}
           {activeTab === 'investments' && (
             <div className="investments-page">
               <div className="page-header">
@@ -1362,7 +1471,6 @@ function App() {
             </div>
           )}
 
-          {/* ===== BUDGETS PAGE ===== */}
           {activeTab === 'budgets' && (
             <div className="budgets-page">
               <div className="page-header">
@@ -1415,7 +1523,6 @@ function App() {
             </div>
           )}
 
-          {/* ===== GOALS PAGE ===== */}
           {activeTab === 'goals' && (
             <div className="goals-page">
               <div className="page-header">
@@ -1461,7 +1568,6 @@ function App() {
             </div>
           )}
 
-          {/* ===== REPORTS PAGE ===== */}
           {activeTab === 'reports' && (
             <div className="reports-page">
               <div className="page-header">
@@ -1509,7 +1615,6 @@ function App() {
             </div>
           )}
 
-          {/* ===== SETTINGS PAGE - FULLY FUNCTIONAL ===== */}
           {activeTab === 'settings' && (
             <div className="settings-page">
               <div className="settings-header">
@@ -1518,7 +1623,6 @@ function App() {
               </div>
 
               <div className="settings-grid">
-                {/* Appearance Settings */}
                 <div className="settings-card" style={{
                   backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
                   border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
@@ -1583,7 +1687,6 @@ function App() {
                   </div>
                 </div>
 
-                {/* Notification Settings */}
                 <div className="settings-card" style={{
                   backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
                   border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
@@ -1626,7 +1729,6 @@ function App() {
                   </div>
                 </div>
 
-                {/* Security Settings */}
                 <div className="settings-card" style={{
                   backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
                   border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
@@ -1656,7 +1758,6 @@ function App() {
                   </div>
                 </div>
 
-                {/* Privacy Settings */}
                 <div className="settings-card" style={{
                   backgroundColor: currentTheme === 'light' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(20, 24, 41, 0.6)',
                   border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.06)'
@@ -1684,7 +1785,6 @@ function App() {
                 </div>
               </div>
 
-              {/* Save Button */}
               <div className="settings-actions">
                 <button 
                   className="btn-primary" 
@@ -1710,7 +1810,6 @@ function App() {
             </div>
           )}
 
-          {/* ===== HELP PAGE ===== */}
           {activeTab === 'help' && (
             <div className="help-page">
               <div className="page-header">
@@ -1760,7 +1859,6 @@ function App() {
         </div>
       </main>
 
-      {/* ===== MODAL ===== */}
       {showModal && (
         <div className="modal-overlay" onClick={function(e) { if (e.target === e.currentTarget) closeModal(); }}>
           <div className="modal" style={{
@@ -1829,6 +1927,65 @@ function App() {
                   {loading ? 'Saving...' : (editingTransaction ? 'Update' : 'Save')}
                 </button>
                 <button type="button" className="btn-secondary" onClick={closeModal}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showAccountModal && (
+        <div className="modal-overlay" onClick={function(e) { if (e.target === e.currentTarget) closeAccountModal(); }}>
+          <div className="modal" style={{
+            backgroundColor: currentTheme === 'light' ? '#ffffff' : '#141829',
+            border: currentTheme === 'light' ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(0, 217, 255, 0.15)'
+          }}>
+            <div className="modal-header">
+              <h3>{editingAccount ? 'Edit Account' : 'Add New Account'}</h3>
+              <button className="modal-close" onClick={closeAccountModal}>
+                <X size={24} />
+              </button>
+            </div>
+            <form onSubmit={handleSubmitAccount} className="modal-form">
+              <div className="input-group">
+                <label>Account Name</label>
+                <input 
+                  type="text" 
+                  value={accountFormData.name} 
+                  onChange={function(e) { setAccountFormData({ ...accountFormData, name: e.target.value }); }} 
+                  required 
+                  placeholder="e.g., Main Account, Savings, etc."
+                />
+              </div>
+              <div className="input-group">
+                <label>Account Type</label>
+                <select 
+                  value={accountFormData.type} 
+                  onChange={function(e) { setAccountFormData({ ...accountFormData, type: e.target.value }); }}
+                  required
+                >
+                  <option value="Checking">Checking</option>
+                  <option value="Savings">Savings</option>
+                  <option value="Investment">Investment</option>
+                  <option value="Credit Card">Credit Card</option>
+                  <option value="Cash">Cash</option>
+                </select>
+              </div>
+              <div className="input-group">
+                <label>Starting Balance ($)</label>
+                <input 
+                  type="number" 
+                  step="0.01" 
+                  value={accountFormData.balance} 
+                  onChange={function(e) { setAccountFormData({ ...accountFormData, balance: parseFloat(e.target.value) || 0 }); }} 
+                  required 
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="modal-actions">
+                <button type="submit" className="btn-primary" disabled={loading}>
+                  {loading ? 'Saving...' : (editingAccount ? 'Update Account' : 'Add Account')}
+                </button>
+                <button type="button" className="btn-secondary" onClick={closeAccountModal}>Cancel</button>
               </div>
             </form>
           </div>
